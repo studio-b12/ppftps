@@ -1,0 +1,16 @@
+# ppftps
+
+
+
+
+# create a ftp wrapper script in your project
+
+```sh
+#!/bin/sh
+
+KDBX="${HOME}/.keypass/ftp.kdbx" \
+KDBXPW="$(x11-ssh-askpass "ftp.kdbx master password)" \
+#KDBXUUID="KDBX-UUID" \
+ppftps $@
+```
+
