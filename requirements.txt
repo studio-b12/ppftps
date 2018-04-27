@@ -1,0 +1,2 @@
+ftputil==3.4
+https://codeload.github.com/pschmitt/pykeepass/tar.gz/2.8.1
