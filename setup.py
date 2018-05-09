@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='ppftps',
-    version='0.1',
+    version='0.2',
     description='Push and pull directories over a secured FTP connection.',
     long_description=readme(),
     classifiers=[
