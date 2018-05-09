@@ -123,10 +123,10 @@ def pull(c, src, dst, forced=False):
 
 def cli(get_account=get_account):
     parser = argparse.ArgumentParser(
-        description="""Push and pull directories over a secured FTP connection."""
-        ,epilog="""For KeyPass accounts you need valid KDBX='/path/to/db.kdbx',
-        KDBXPW=\"$(cmd_get_kdbx_master_pw)\" and KDBXUUID='server-uuid'
-        vars in your environment.
+        description="""Push Push directories over a secured FTP connection."""
+        ,epilog="""For KeyPass accounts you to set valid KDBX='/path/to/db.kdbx',
+        KDBXPW=\"$(cmd_get_kdbx_master_pw)\" and KDBXUUID='server-uuid' vars
+        in your environment.
         """)
     parser.add_argument("-f", "--force", action='store_true', help="force operation")
 
