@@ -19,21 +19,25 @@ class FTPTLSSession(ftplib.FTP_TLS):
         self.set_pasv(True)
 
 def get_account():
+    """Returns an account
+        { url: host[:port], username: login, password: password }
+    """
+
     db = env.get('KDBX', None)
     pw = env.get('KDBXPW', None)
     uuid = env.get('KDBXUUID', None)
+
     if db and pw:
         from pykeepass import PyKeePass
-        if not uuid:
-            for a in PyKeePass(db, pw).entries:
-                if a.url:
-                    print("UUID=%s URL=%s PATH=%s" % (a.uuid, a.url, a.path))
-        else:
-            a = PyKeePass(db, pw).find_entries(uuid=uuid, first=True)
-            if a:
-                return a
+        a = PyKeePass(db, pw).find_entries(uuid=uuid, first=True)
+        if a:
+            return a
+        for a in PyKeePass(db, pw).entries:
+            if a.url:
+                print("UUID=%s URL=%s PATH=%s" % (a.uuid, a.url, a.path))
+        raise LookupError("No account. Set a valid KDBXUUID=UUID")
 
-    raise LookupError("No account.")
+    raise LookupError("set KDBX, KDBXPW and KDBXUUID.")
 
 def connect(a):
     host, port = a.url.split(':', 1) if ':' in a.url else (a.url, '21')
