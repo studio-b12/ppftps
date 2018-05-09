@@ -1,12 +1,18 @@
-import argparse
-import ftplib
-import ftputil
+"""
+Push Push FTPS
+"""
 import os
-import sys
-
 from os import environ as env
 
-__all__ = ["cli", "get_account", "connect", "push", "pull", "ls", "rm"]
+import sys
+
+import argparse
+
+import ftplib
+import ftputil
+
+
+__all__ = ["cli", "get_account", "connect", "cmd_push", "cmd_pull", "cmd_ls", "cmd_rm"]
 
 class FTPTLSSession(ftplib.FTP_TLS):
 
@@ -23,108 +29,104 @@ def get_account():
         { url: host[:port], username: login, password: password }
     """
 
-    db = env.get('KDBX', None)
-    pw = env.get('KDBXPW', None)
+    xdb = env.get('KDBX', None)
+    xpw = env.get('KDBXPW', None)
     uuid = env.get('KDBXUUID', None)
 
-    if db and pw:
+    if xdb and xpw:
         from pykeepass import PyKeePass
-        a = PyKeePass(db, pw).find_entries(uuid=uuid, first=True)
-        if a:
-            return a
-        for a in PyKeePass(db, pw).entries:
-            if a.url:
-                print("UUID=%s URL=%s PATH=%s" % (a.uuid, a.url, a.path))
+        acc = PyKeePass(xdb, xpw).find_entries(uuid=uuid, first=True)
+        if acc:
+            return acc
+        for acc in PyKeePass(xdb, xpw).entries:
+            if acc.url:
+                print("UUID=%s URL=%s PATH=%s" % (acc.uuid, acc.url, acc.path))
         raise LookupError("No account. Set a valid KDBXUUID=UUID")
 
     raise LookupError("set KDBX, KDBXPW and KDBXUUID.")
 
-def connect(a):
-    host, port = a.url.split(':', 1) if ':' in a.url else (a.url, '21')
+def connect(acc):
+    host, port = acc.url.split(':', 1) if ':' in acc.url else (acc.url, '21')
     port = int(port)
-    return ftputil.FTPHost(host
-        , a.username
-        , a.password
-        , port=port
-        , session_factory=FTPTLSSession)
+    return ftputil.FTPHost(host,
+                           acc.username, acc.password,
+                           port=port, session_factory=FTPTLSSession)
 
-def ls(c, paths):
+def cmd_ls(con, paths):
     for path in paths:
-        if c.path.isfile(path):
-            path = c.path.dirname(path)
-        for entry in c.listdir(path):
-            print(c.path.join(path, entry))
+        if con.path.isfile(path):
+            path = con.path.dirname(path)
+        for entry in con.listdir(path):
+            print(con.path.join(path, entry))
 
-def rm(c, paths):
+def cmd_rm(con, paths):
     for path in paths:
-        if c.path.isdir(path):
-            c.rmtree(path, ignore_errors=True)
+        if con.path.isdir(path):
+            con.rmtree(path, ignore_errors=True)
         else:
-            c.remove(path)
+            con.remove(path)
         print("removed: %s" % path)
 
-def collect(fs, src):
-    if fs.path.isfile(src):
-        s = fs.path.dirname(src)
-        yield (s, s, [fs.path.basename(src)])
+def collect(filesystem, src):
+    if filesystem.path.isfile(src):
+        parent = filesystem.path.dirname(src)
+        yield (parent, parent, [filesystem.path.basename(src)])
 
-    for root, _, files in fs.walk(src):
+    for root, _, files in filesystem.walk(src):
         yield (src, root, files)
-
-    raise StopIteration()
 
 def entries(sfs, src, dfs, dst, mkdirs=True):
     for base, root, files in collect(sfs, src):
-        p = dfs.path.join(dst, (root.split(base, 1)[1]).lstrip('/'))
+        path = dfs.path.join(dst, (root.split(base, 1)[1]).lstrip('/'))
         if mkdirs:
             try:
-                dfs.makedirs(p, exist_ok=True)
+                dfs.makedirs(path, exist_ok=True)
             except TypeError:
-                dfs.makedirs(p)
+                dfs.makedirs(path)
 
-        for f in files:
-            yield (sfs.path.join(root, f), dfs.path.join(p, f))
+        for i in files:
+            yield (sfs.path.join(root, i), dfs.path.join(path, i))
 
-def _do(op, sfs, src, dfs, dst, forced=False):
-    def _exc(op, entries, forced=False):
-        for sp, dp in entries:
+def _do(cmd, sfs, src, dfs, dst, forced=False):
+    def _exc(cmd, files, forced=False):
+        for spath, dpath in files:
             try:
-                op(sp, dp, forced)
-            except Exception as e:
+                cmd(spath, dpath, forced)
+            except Exception:
                 try:
-                    dfs.remove(dp)
+                    dfs.remove(dpath)
                 except Exception:
                     pass
-                yield (sp, dp)
+                yield (spath, dpath)
 
-    yield from _exc(op, _exc(op, entries(sfs, src, dfs, dst), forced), True)
+    yield from _exc(cmd, _exc(cmd, entries(sfs, src, dfs, dst), forced), True)
 
-def push(c, src, dst, forced=False):
-    def _push(sp, dp, forced=False):
+def cmd_push(con, src, dst, forced=False):
+    def _push(spath, dpath, forced=False):
         if forced:
-            c.upload(sp, dp)
-        elif not c.upload_if_newer(sp, dp):
+            con.upload(spath, dpath)
+        elif not con.upload_if_newer(spath, dpath):
             return
-        print("pushed: %s (forced=%r)" % (dp, forced))
+        print("pushed: %s (forced=%r)" % (dpath, forced))
 
-    for sp, dp in _do(_push, os, src, c, dst, forced):
-        print("push error: %s -> %s" % (sp, dp), file=sys.stderr)
+    for spath, dpath in _do(_push, os, src, con, dst, forced):
+        print("push error: %s -> %s" % (spath, dpath), file=sys.stderr)
 
-def pull(c, src, dst, forced=False):
-    def _pull(sp, dp, forced=False):
+def cmd_pull(con, src, dst, forced=False):
+    def _pull(spath, dpath, forced=False):
         if forced:
-            c.download(sp, dp)
-        elif not c.download_if_newer(sp, dp):
+            con.download(spath, dpath)
+        elif not con.download_if_newer(spath, dpath):
             return
-        print("pulled: %s (forced=%r)" % (sp, forced))
+        print("pulled: %s (forced=%r)" % (spath, forced))
 
-    for sp, dp in _do(_pull, c, src, os, dst, forced):
-        print("pull error: %s -> %s" % (sp, dp), file=sys.stderr)
+    for spath, dpath in _do(_pull, con, src, os, dst, forced):
+        print("pull error: %s -> %s" % (spath, dpath), file=sys.stderr)
 
-def cli(get_account=get_account):
+def cli(account=get_account):
     parser = argparse.ArgumentParser(
-        description="""Push Push directories over a secured FTP connection."""
-        ,epilog="""For KeyPass accounts you to set valid KDBX='/path/to/db.kdbx',
+        description="""Push Push directories over a secured FTP connection.""",
+        epilog="""For KeyPass accounts you to set valid KDBX='/path/to/db.kdbx',
         KDBXPW=\"$(cmd_get_kdbx_master_pw)\" and KDBXUUID='server-uuid' vars
         in your environment.
         """)
@@ -132,34 +134,33 @@ def cli(get_account=get_account):
 
     cmds = parser.add_subparsers(title="commands", dest='which')
 
-    sp = cmds.add_parser("pull", help="download directory or file")
-    sp.add_argument("remote", help="remote path")
-    sp.add_argument("local", help="local path")
+    cmdp = cmds.add_parser("pull", help="download directory or file")
+    cmdp.add_argument("remote", help="remote path")
+    cmdp.add_argument("local", help="local path")
 
-    sp = cmds.add_parser("push", help="upload directory or file")
-    sp.add_argument("local", help="local path")
-    sp.add_argument("remote", help="remote path")
+    cmdp = cmds.add_parser("push", help="upload directory or file")
+    cmdp.add_argument("local", help="local path")
+    cmdp.add_argument("remote", help="remote path")
 
-    sp = cmds.add_parser("ls", help="directory listing")
-    sp.add_argument("path", nargs='+', help="paths to list")
+    cmdp = cmds.add_parser("ls", help="directory listing")
+    cmdp.add_argument("path", nargs='+', help="paths to list")
 
-    sp = cmds.add_parser("rm", help="delte directory or file")
-    sp.add_argument("path", nargs='+', help="paths to delete")
+    cmdp = cmds.add_parser("rm", help="delte directory or file")
+    cmdp.add_argument("path", nargs='+', help="paths to delete")
 
     args = parser.parse_args()
     if not args.which:
         parser.print_help()
         sys.exit(1)
 
-    a = get_account()
-    with connect(a) as c:
-        cmd=args.which
+    acc = account()
+    with connect(acc) as con:
+        cmd = args.which
         if cmd == "push":
-            push(c, args.local, args.remote, args.force)
+            cmd_push(con, args.local, args.remote, args.force)
         elif cmd == "pull":
-            pull(c, args.remote, args.local, args.force)
+            cmd_pull(con, args.remote, args.local, args.force)
         elif cmd == "ls":
-            ls(c, args.path)
+            cmd_ls(con, args.path)
         elif cmd == "rm":
-            rm(c, args.path)
-
+            cmd_rm(con, args.path)
