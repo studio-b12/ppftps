@@ -5,9 +5,10 @@ def readme():
         return f.read()
 
 setup(name='ppftps',
-    version='0.2',
+    version='0.2.1',
     description='Push directories over a secured FTP connection.',
     long_description=readme(),
+    long_description_content_type='text/markdown',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: BSD License',
@@ -29,6 +30,11 @@ setup(name='ppftps',
         'console_scripts': ['ppftps=ppftps:cli'],
     },
     include_package_data=True,
-    zip_safe=False
+    zip_safe=False,
+    project_urls={
+        'Bug Reports': 'https://github.com/studio-b12/ppftps/issues',
+        'Source': 'https://github.com/studio-b12/ppftps',
+    },
+    python_requires='>=3',
 )
 
