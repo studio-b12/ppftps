@@ -126,7 +126,7 @@ def cmd_pull(con, src, dst, forced=False):
 def cli(account=get_account):
     parser = argparse.ArgumentParser(
         description="""Push Push directories over a secured FTP connection.""",
-        epilog="""For KeyPass accounts you to set valid KDBX='/path/to/db.kdbx',
+        epilog="""For KeePass accounts you to set valid KDBX='/path/to/db.kdbx',
         KDBXPW=\"$(cmd_get_kdbx_master_pw)\" and KDBXUUID='server-uuid' vars
         in your environment.
         """)

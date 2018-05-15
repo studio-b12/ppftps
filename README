@@ -2,9 +2,9 @@
 
 Push Push directories over a secured FTP connection.
 
-For KeyPass accounts you need to set valid KDBX='/path/to/db.kdbx',
+For [KeePass] accounts you need to set valid KDBX='/path/to/db.kdbx',
 KDBXPW=\"$(cmd_get_kdbx_master_pw)\" and KDBXUUID='server-uuid' vars
-in your environment.
+in your shell environment or wrapper script.
 
 ## Install
 
@@ -18,7 +18,7 @@ and create a ftp wrapper script with your settings in your project directory
 ```sh
 #!/bin/sh
 
-KDBX="${HOME}/.keypass/ftp.kdbx" \
+KDBX="${HOME}/.keepass/ftp.kdbx" \
 KDBXPW="$(x11-ssh-askpass "ftp.kdbx master password)" \
 KDBXUUID="KDBX-UUID" \
 ppftps $@
@@ -30,3 +30,4 @@ ppftps $@
 ./ftp push ./local-folder /absolut/path/remote/folder
 ```
 
+[KeePass]: https://keepass.info "KeePass Password Safe"

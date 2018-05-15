@@ -6,7 +6,7 @@ def readme():
 
 setup(name='ppftps',
     version='0.2',
-    description='Push and pull directories over a secured FTP connection.',
+    description='Push directories over a secured FTP connection.',
     long_description=readme(),
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -14,7 +14,7 @@ setup(name='ppftps',
         'Programming Language :: Python :: 3.6',
         'Topic :: Internet :: File Transfer Protocol (FTP)',
     ],
-    keywords='ftp ftps keypass pull push util',
+    keywords='cli ftp ftps keepass push pull sync util',
     url='https://github.com/studio-b12/ppftps',
     author='Christoph Polcin',
     author_email='c.polcin@studio-b12.de',
