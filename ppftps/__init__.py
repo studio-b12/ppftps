@@ -46,7 +46,8 @@ def get_account():
     raise LookupError("set KDBX, KDBXPW and KDBXUUID.")
 
 def connect(acc):
-    host, port = acc.url.split(':', 1) if ':' in acc.url else (acc.url, '21')
+    url = acc.url.split('://', 1) if '://' in acc.url else acc.url
+    host, port = url.split(':', 1) if ':' in url else (url, '21')
     port = int(port)
     return ftputil.FTPHost(host,
                            acc.username, acc.password,
