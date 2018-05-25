@@ -19,7 +19,7 @@ and create a ftp wrapper script with your settings in your project directory
 #!/bin/sh
 
 KDBX="${HOME}/.keepass/ftp.kdbx" \
-KDBXPW="$(x11-ssh-askpass "ftp.kdbx master password)" \
+KDBXPW="$(x11-ssh-askpass ftp.kdbx master password)" \
 KDBXUUID="KDBX-UUID" \
 ppftps $@
 ```
